@@ -1,4 +1,4 @@
-"""火花管家 SparkKeeper —— 抖音续火花系统（自主实现）。
+"""火花管家 dy-xuhuohua —— 抖音续火花系统（自主实现）。
 
 模块一览：
 - settings  环境与账号配置读写
@@ -14,4 +14,4 @@
 """
 
 __version__ = "1.0.0"
-__app_name__ = "火花管家 SparkKeeper"
+__app_name__ = "火花管家 dy-xuhuohua"

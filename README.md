@@ -1,4 +1,4 @@
-# 火花管家 SparkKeeper 🔥
+# dy-xuhuohua（火花管家）🔥
 
 抖音自动续火花系统（自主实现）。用一台常开的电脑 / 云服务器，每天在你设定的时间自动给选中的火花好友发一条消息，把「火花 · 连续聊天天数」一直养下去——不用每天定闹钟手动发。
 
@@ -54,7 +54,7 @@ python app.py                  # 默认 http://0.0.0.0:8020
 ## 目录结构
 
 ```
-spark-keeper/
+dy-xuhuohua/
 ├── app.py               # FastAPI 入口与全部 API 路由
 ├── keeper/
 │   ├── settings.py      # 环境变量 / 账号配置读写

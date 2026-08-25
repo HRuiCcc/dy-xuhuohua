@@ -30,7 +30,7 @@ class _RingHandler(logging.Handler):
 def get_logger(name: str) -> logging.Logger:
     if name in _LOGGERS:
         return _LOGGERS[name]
-    lg = logging.getLogger(f"spark.{name}")
+    lg = logging.getLogger(f"dyxhh.{name}")
     lg.setLevel(logging.INFO)
     if not lg.handlers:
         ch = logging.StreamHandler()
@@ -38,7 +38,7 @@ def get_logger(name: str) -> logging.Logger:
         lg.addHandler(ch)
         try:
             _LOG_DIR.mkdir(parents=True, exist_ok=True)
-            fh = RotatingFileHandler(_LOG_DIR / "spark-keeper.log", maxBytes=2_000_000, backupCount=3, encoding="utf-8")
+            fh = RotatingFileHandler(_LOG_DIR / "dy-xuhuohua.log", maxBytes=2_000_000, backupCount=3, encoding="utf-8")
             fh.setFormatter(_formatter())
             lg.addHandler(fh)
         except Exception:

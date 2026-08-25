@@ -88,7 +88,7 @@ async function loadStatus() {
     <div class="stat"><div class="v">${streakCount}</div><div class="l">账号数</div></div>
     <div class="stat"><div class="v">${s.login_state ? "✓" : "✗"}</div><div class="l">当前账号登录态</div></div>
     <div class="stat"><div class="v">${s.running.active ? "运行中" : "空闲"}</div><div class="l">任务状态</div></div>
-    <div class="stat"><div class="v">${s.version}</div><div class="l">SparkKeeper 版本</div></div>`;
+    <div class="stat"><div class="v">${s.version}</div><div class="l">dy-xuhuohua 版本</div></div>`;
 
   const tb = $("schedule-table").querySelector("tbody");
   tb.innerHTML = s.schedule.map((x) => `
