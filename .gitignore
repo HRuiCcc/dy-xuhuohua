@@ -1,0 +1,11 @@
+# 敏感与运行时文件
+.env
+config.json
+.venv/
+data/
+server.log
+nohup.out
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store

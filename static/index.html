@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>火花管家 SparkKeeper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<!-- 背景光晕 -->
+<div class="orb a"></div>
+<div class="orb b"></div>
+
+<!-- 令牌弹窗 -->
+<div id="token-modal" class="modal">
+  <div class="modal-box">
+    <div class="mark">🔥</div>
+    <h1>火花管家</h1>
+    <p class="muted">SparkKeeper · 让火花永远不灭</p>
+    <input id="token-input" type="password" placeholder="输入访问令牌">
+    <button id="token-btn" class="btn primary" style="width:100%">进入控制台 →</button>
+    <p id="token-err" class="err"></p>
+  </div>
+</div>
+
+<div id="app" class="layout hidden">
+  <!-- 侧边栏 -->
+  <aside class="side">
+    <div class="brand">
+      <span class="logo">🔥</span>
+      <div>
+        <div class="brand-name">火花管家</div>
+        <div class="brand-sub">SparkKeeper</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <button data-view="overview" class="nav-item active">📊 概览</button>
+      <button data-view="accounts" class="nav-item">👥 账号</button>
+      <button data-view="cred" class="nav-item">📱 凭证</button>
+      <button data-view="friends" class="nav-item">💬 好友</button>
+      <button data-view="schedule" class="nav-item">⏰ 定时</button>
+      <button data-view="logs" class="nav-item">📜 日志</button>
+    </nav>
+    <div class="side-foot">
+      <span id="side-running" class="pill idle">空闲</span>
+      <span id="side-state" class="pill idle">未登录</span>
+    </div>
+  </aside>
+
+  <!-- 主区域 -->
+  <main class="main">
+    <header class="topbar">
+      <h2 id="view-title">概览</h2>
+      <div class="topbar-right">
+        <select id="account-select" title="当前账号"></select>
+        <button id="stop-btn" class="btn danger" disabled>■ 强制停止</button>
+      </div>
+    </header>
+
+    <section id="view-overview" class="view">
+      <div class="cards" id="stat-cards"></div>
+      <div class="panel">
+        <h3>⏰ 定时任务</h3>
+        <table id="schedule-table">
+          <thead><tr><th>账号</th><th>时间</th><th>浮动</th><th>下次执行</th><th>状态</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>▶ 立即执行</h3>
+        <div class="row">
+          <button class="btn primary" data-run="dry">🧪 模拟演练</button>
+          <button class="btn warn" data-run="send">🚀 正式发送</button>
+          <button class="btn" data-run="sync">🔄 仅同步好友</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-accounts" class="view hidden">
+      <div class="panel">
+        <h3>账号列表</h3>
+        <div class="row" style="margin-bottom:12px">
+          <input id="new-account-name" placeholder="新账号名称">
+          <button id="create-account-btn" class="btn primary">＋ 新建账号</button>
+        </div>
+        <table id="accounts-table">
+          <thead><tr><th>名称</th><th>ID</th><th>启用</th><th>操作</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-cred" class="view hidden">
+      <div class="panel">
+        <h3>登录状态</h3>
+        <p id="cred-state" class="muted">加载中…</p>
+        <div class="row">
+          <button id="qr-login-btn" class="btn primary">📱 手机扫码登录</button>
+        </div>
+        <div id="qr-box" class="hidden" style="margin-top:16px;text-align:center">
+          <img id="qr-img" alt="登录二维码" style="max-width:240px;border-radius:12px;background:#fff">
+          <p id="qr-status" class="muted">生成二维码中…（约 20~40 秒）</p>
+          <button id="qr-cancel-btn" class="btn">取消登录</button>
+        </div>
+        <p class="muted" style="margin-top:12px;font-size:12px">
+          用抖音 App 扫码；若触发二次验证（如刷脸），按抖音提示在手机上完成即可。
+        </p>
+      </div>
+    </section>
+
+    <section id="view-friends" class="view hidden">
+      <div class="panel">
+        <h3>火花好友</h3>
+        <div class="row" style="margin-bottom:12px">
+          <button id="sync-btn" class="btn primary">🚀 同步联系人</button>
+          <button id="auto-select-btn" class="btn">✨ 一键勾选火花好友</button>
+          <button id="save-select-btn" class="btn warn">💾 保存勾选</button>
+          <span id="friend-count" class="muted"></span>
+        </div>
+        <div id="friends-list" class="friend-list"></div>
+      </div>
+    </section>
+
+    <section id="view-schedule" class="view hidden">
+      <div class="panel form-grid">
+        <h3 style="grid-column:1/-1">定时与发送设置</h3>
+        <label>定时时间
+          <input id="cfg-time" type="time">
+        </label>
+        <label>随机浮动（分钟）
+          <input id="cfg-jitter" type="number" min="0" max="180">
+        </label>
+        <label>发送间隔下限（分钟）
+          <input id="cfg-gap-min" type="number" min="1" max="60">
+        </label>
+        <label>发送间隔上限（分钟）
+          <input id="cfg-gap-max" type="number" min="1" max="60">
+        </label>
+        <label>每次最多发几人
+          <input id="cfg-max" type="number" min="1" max="100">
+        </label>
+        <label>无火花好友每日首条限额
+          <input id="cfg-first-limit" type="number" min="0" max="10">
+        </label>
+        <label style="grid-column:1/-1">发送文案（每行一条，随机挑一条发）
+          <textarea id="cfg-messages" rows="4"></textarea>
+        </label>
+        <label class="switch-row"><input id="cfg-auto" type="checkbox"> 启用自动定时任务</label>
+        <label class="switch-row"><input id="cfg-allow-first" type="checkbox"> 允许给无火花好友发首条消息</label>
+        <div style="grid-column:1/-1">
+          <button id="cfg-save-btn" class="btn primary">保存设置（实时生效）</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-logs" class="view hidden">
+      <div class="panel">
+        <h3>运行日志</h3>
+        <div class="row" style="margin-bottom:12px">
+          <button id="logs-refresh-btn" class="btn">刷新</button>
+          <label class="switch-row" style="margin:0"><input id="logs-auto" type="checkbox" checked> 自动刷新</label>
+        </div>
+        <pre id="logs-box" class="logs"></pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
