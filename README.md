@@ -18,15 +18,15 @@
 
 **概览**
 
-![概览](docs/screenshots/overview.png)
+![概览](docs/screenshots/overview.png?v=2)
 
 **火花好友**
 
-![好友](docs/screenshots/friends.png)
+![好友](docs/screenshots/friends.png?v=2)
 
 **定时与发送**
 
-![定时](docs/screenshots/schedule.png)
+![定时](docs/screenshots/schedule.png?v=2)
 
 ## 功能特性
 
