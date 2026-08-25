@@ -4,9 +4,17 @@
 
 ## 界面截图
 
-| 概览 | 火花好友 | 定时与发送 |
-|------|---------|-----------|
-| ![概览](docs/screenshots/overview.png) | ![好友](docs/screenshots/friends.png) | ![定时](docs/screenshots/schedule.png) |
+**概览**
+
+![概览](docs/screenshots/overview.png)
+
+**火花好友**
+
+![好友](docs/screenshots/friends.png)
+
+**定时与发送**
+
+![定时](docs/screenshots/schedule.png)
 
 ## 功能
 
