@@ -381,17 +381,17 @@ curl -X PUT -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" \
 3. 自动化操作可能违反抖音平台规则，建议先用小号试跑
 4. 使用本项目所产生的一切账号与法律后果均由使用者自行承担
 
-## 赞赏支持
-
-如果这个项目帮你保住了火花，可以请我喝杯奶茶 ☕
-
-<div align="center">
-  <img src="docs/wechat-donate.png" width="220" alt="微信赞赏码" />
-  <p><sub>微信扫码赞赏</sub></p>
-</div>
-
 ## License
 
 [MIT](LICENSE)
 
 功能需求参考社区开源项目 douyin-cloud-streak（MIT）；本项目的架构与全部代码均为独立实现。
+
+## 赞赏支持
+
+如果这个项目帮你保住了火花，可以请我喝杯奶茶 ☕
+
+<div align="center">
+  <img src="docs/wechat-donate.png" width="300" alt="微信赞赏码" />
+  <p><sub>微信扫码赞赏</sub></p>
+</div>
