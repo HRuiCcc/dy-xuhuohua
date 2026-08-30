@@ -47,6 +47,37 @@ def _apply_stealth(page) -> None:
         logger.debug("stealth 注入跳过：%s", exc)
 
 
+def _new_context(browser, state_file: str | None):
+    """创建浏览器上下文并注入登录态。
+
+    关键：仅注入 cookies，不回放 storage_state 里的 localStorage。
+    抖音会因 localStorage 字段与 cookies 不匹配而拒绝聊天列表接口，
+    甩出 "word word" 骨架/占位页（火花天数随之消失）。仅 cookies 注入可避免。
+    参考社区项目 douyin-cloud-streak 的做法。
+    """
+    base = dict(
+        viewport={"width": 1366, "height": 768},
+        user_agent=_CHROME_UA,
+        locale="zh-CN",
+        timezone_id=settings.TZ,
+        ignore_https_errors=True,
+    )
+    if state_file and Path(state_file).exists():
+        try:
+            import json
+            state = json.loads(Path(state_file).read_text(encoding="utf-8"))
+            cookies = state.get("cookies") or []
+            if cookies:
+                ctx = browser.new_context(**base)
+                ctx.add_cookies(cookies)
+                return ctx
+        except Exception as exc:
+            logger.warning("仅注入 cookies 失败，回退 storage_state：%s", exc)
+    if state_file:
+        return browser.new_context(storage_state=state_file, **base)
+    return browser.new_context(**base)
+
+
 @contextmanager
 def open_browser(state_path: Path | None = None, headless: bool = True):
     """打开一个带登录态的浏览器上下文。
@@ -66,14 +97,7 @@ def open_browser(state_path: Path | None = None, headless: bool = True):
     browser = None
     try:
         browser = pw.chromium.launch(headless=headless, args=_COMMON_ARGS)
-        context = browser.new_context(
-            storage_state=state_file,
-            viewport={"width": 1366, "height": 768},
-            user_agent=_CHROME_UA,
-            locale="zh-CN",
-            timezone_id=settings.TZ,
-            ignore_https_errors=True,
-        )
+        context = _new_context(browser, state_file)
         page = context.new_page()
         _apply_stealth(page)
         yield page, context, browser, pw
