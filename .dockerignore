@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.pyo
+data
+.env
+config.json
+server.log
+nohup.out
+.DS_Store

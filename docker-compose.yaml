@@ -1,0 +1,37 @@
+# dy-xuhuohua（火花管家）Docker Compose
+# 用法：
+#   1) 在 compose 同级目录放一个 .env 文件，写 AUTH_TOKEN=你的随机长字符串
+#      （不写也能启动，但会用默认弱口令，务必改！）
+#   2) docker compose up -d --build
+#   3) 浏览器打开 http://<主机IP>:8020 ，用上面的 AUTH_TOKEN 登录控制台
+#
+# 注意：登录态/好友/配置都在 ./data 里，升级镜像前别删这个目录，否则要重新扫码。
+
+services:
+  xuhuohua:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dy-xuhuohua:latest
+    container_name: dy-xuhuohua
+    restart: unless-stopped
+    ports:
+      - "8020:8020"
+    environment:
+      # 以下变量直接注入容器；python-dotenv 不会覆盖已存在的环境变量，
+      # 所以 compose 里设的 AUTH_TOKEN 优先级高于容器内的 .env。
+      HOST: "0.0.0.0"
+      PORT: "8020"
+      TZ: "Asia/Shanghai"
+      DATA_DIR: "/app/data"
+      MAX_BROWSERS: "5"
+      # 改随机长字符串；或在 compose 目录的 .env 写 AUTH_TOKEN=xxx 自动读入
+      AUTH_TOKEN: "${AUTH_TOKEN:-dyxhh_change_me_now}"
+    volumes:
+      # 核心：登录态 / 好友列表 / 配置持久化，容器重建不丢
+      - ./data:/app/data
+      # 若想在宿主机直接编辑根配置，取消下一行注释
+      - ./config.json:/app/config.json:ro
+    # Chromium 已用 --disable-dev-shm-usage，shm 非必需；
+    # 本地调试若报共享内存相关错误，可取消下一行并调大
+    # shm_size: "256m"
