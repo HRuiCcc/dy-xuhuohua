@@ -13,5 +13,5 @@
 - scheduler APScheduler 定时任务（每日续火花 + 每周维护）
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __app_name__ = "火花管家 dy-xuhuohua"

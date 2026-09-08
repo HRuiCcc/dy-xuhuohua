@@ -39,36 +39,124 @@ SEL_CHAT_ITEMS = [
 
 _DAY_RE = re.compile(r"(\d{1,3})\s*天")
 _SPARK_RE = re.compile(r"火花|🔥")
+_SPARK_DAYS_RE = re.compile(r"火花[^0-9]{0,6}(\d{1,3})")
+_TIME_LINE_RE = re.compile(r"^\d{1,2}:\d{2}$")
+_BARE_NUM_RE = re.compile(r"^\d{2,3}$")
+_FIRE_CLS_RE = re.compile(r"spark|streak|flame|fire", re.I)
 
-_JS_COLLECT = r"""
+# 读屏标签打开后，抖音会给会话行补充 aria-label（如「侯，火花392天」），
+# 这是最可靠的信号；关闭时天数往往只剩一个裸数字，需要配合火花图标类名判断。
+_JS_ENABLE_SCREEN_READER = r"""
+() => {
+  const els = [...document.querySelectorAll('div,span,li,button,p,a')];
+  const el = els.find(e => {
+    const t = (e.innerText || '').trim();
+    return (t === '读屏标签' || t.includes('开启读屏标签')) && e.offsetWidth > 0;
+  });
+  if (el) { try { el.click(); return true; } catch (err) { return false; } }
+  return false;
+}
+"""
+
+_JS_COLLECT_ROWS = r"""
 () => {
   const out = [];
   const seen = new Set();
-  const walk = (el) => {
-    for (const node of el.childNodes) {
-      if (node.nodeType === 3 && node.textContent) {   // 文本节点
-        const t = node.textContent.trim();
-        const m = t.match(/(\d{1,3})\s*天/);
-        if (m && /火花|🔥/.test(t)) {
-          let host = node.parentElement;
-          let name = '';
-          for (let k = 0; k < 4 && host; k++) {
-            const txt = (host.innerText || '').trim();
-            if (txt && txt !== t && txt.length <= 40) { name = txt.split('\n')[0]; break; }
-            host = host.parentElement;
-          }
-          const key = name || t;
-          if (!seen.has(key)) { seen.add(key); out.push({ name: name || '(未知)', spark: parseInt(m[1], 10) }); }
-        }
-      } else if (node.nodeType === 1) {
-        walk(node);
-      }
-    }
+  const grab = (el) => {
+    const text = el.innerText || '';
+    const lines = text.split('\n').map(s => s.trim()).filter(s => s && s.length <= 40).slice(0, 8);
+    const aria = (el.getAttribute('aria-label') || '') + ' ' +
+      [...el.querySelectorAll('[aria-label]')].slice(0, 20).map(e => e.getAttribute('aria-label')).join(' ');
+    const title = el.getAttribute('title') || '';
+    const fireCls = [...el.querySelectorAll('[class*="spark" i], [class*="streak" i], [class*="flame" i], [class*="fire" i]')]
+      .slice(0, 20).map(e => (typeof e.className === 'string' ? e.className : '')).join(' ');
+    const key = text.slice(0, 120) + '|' + aria.slice(0, 80) + '|' + fireCls.slice(0, 80);
+    if (key.length < 4 || seen.has(key)) return;
+    seen.add(key);
+    out.push({ lines, aria, title, cls: fireCls });
   };
-  walk(document.body);
+  const sel = '[class*="conversation"], [class*="chat-item"], [class*="session-item"], [class*="message-item"], [class*="contact-item"]';
+  for (const el of document.querySelectorAll(sel)) { if (out.length > 300) break; grab(el); }
+  if (!out.length) {
+    for (const el of document.querySelectorAll('li')) { if (out.length > 300) break; grab(el); }
+  }
   return out;
 }
 """
+
+
+def parse_rows(rows: list[dict]) -> list[dict]:
+    """把页面行数据解析成火花好友列表（纯函数，可单测）。
+
+    每行信号优先级：
+    1. aria/title 里的「火花 N」或「N天」
+    2. 行内文本「N天」（行内任意位置有火花/🔥文字才认）
+    3. 火花图标类名 + 行首裸数字（issue #1 的 Docker 页面形态）
+    没有火花信号的行一律丢弃——宁可漏，不可给无关会话发消息。
+    """
+    found: list[dict] = []
+    seen: set[str] = set()
+
+    for row in rows:
+        lines = [str(x).strip() for x in row.get("lines", []) if str(x).strip()]
+        aria = row.get("aria") or ""
+        title = row.get("title") or ""
+        cls = row.get("cls") or ""
+        hay = " ".join([aria, title, *lines])
+
+        days = None
+        m = _SPARK_DAYS_RE.search(aria + " " + title) or _DAY_RE.search(aria + " " + title)
+        if m:
+            days = int(m.group(1))
+        else:
+            has_fire_text = bool(_SPARK_RE.search(hay))
+            has_fire_cls = bool(_FIRE_CLS_RE.search(cls))
+            if has_fire_text:
+                m = _DAY_RE.search(hay)
+                if m:
+                    days = int(m.group(1))
+                else:
+                    for line in lines:  # 「火花 392」（无天字）或裸数字
+                        if _BARE_NUM_RE.match(line):
+                            days = int(line)
+                            break
+            elif has_fire_cls:
+                for line in lines:
+                    if _BARE_NUM_RE.match(line):
+                        days = int(line)
+                        break
+        if days is None:
+            continue
+
+        name = _extract_name(lines, aria)
+        if not name:
+            continue
+        if name in seen:
+            continue
+        seen.add(name)
+        found.append({"name": name, "spark": days})
+    return found
+
+
+def _extract_name(lines: list[str], aria: str) -> str:
+    """行内取名字：第一个像昵称的行；行首优先，跳过时间/天数/消息形态。"""
+    candidates = list(lines)
+    m = re.search(r"^([^，,：:]{1,20})[，,].*火花", aria)
+    if m:
+        candidates.insert(0, m.group(1).strip())
+    for line in candidates:
+        t = line.strip()
+        if not t or _TIME_LINE_RE.match(t) or _BARE_NUM_RE.match(t):
+            continue
+        if t.startswith("[") and t.endswith("]"):
+            continue
+        if t.startswith(("分享", "在线", "离线")):
+            continue
+        if "：" in t or ":" in t:
+            continue
+        return t
+    m = re.match(r"^([^，,：:]{1,20})", aria)
+    return m.group(1).strip() if m else ""
 
 
 def check_logged_in(page) -> bool:
@@ -94,12 +182,19 @@ def sync_streak_friends(page, account_id: str) -> list[dict]:
     """同步火花好友列表：网页解析为主，创作者接口兜底。"""
     found: list[dict] = []
 
-    # 方案一：聊天页 DOM 解析
+    # 方案一：聊天页 DOM 解析（先尝试打开读屏标签，信号更全）
     try:
         page.goto(CHAT_URL, wait_until="domcontentloaded", timeout=60000)
         time.sleep(4)
+        try:
+            if page.evaluate(_JS_ENABLE_SCREEN_READER):
+                logger.info("已尝试开启读屏标签，等待页面刷新…")
+                page.wait_for_timeout(2000)
+        except Exception as exc:
+            logger.debug("读屏标签开关跳过：%s", exc)
         for _ in range(6):
-            items = page.evaluate(_JS_COLLECT)
+            rows = page.evaluate(_JS_COLLECT_ROWS) or []
+            items = parse_rows(rows)
             if items:
                 found = items
                 break
