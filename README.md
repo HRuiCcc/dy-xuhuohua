@@ -394,4 +394,5 @@ curl -X PUT -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" \
 <div align="center">
   <img src="docs/wechat-donate.png" width="300" alt="微信赞赏码" />
   <p><sub>微信扫码赞赏</sub></p>
+  <p>微号：<strong>hrc_rch</strong>（说明来意）</p>
 </div>
